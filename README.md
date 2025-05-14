@@ -77,3 +77,81 @@ git reset --hard <커밋 해시>      # 커밋 + 작업 파일 모두 취소
 ## ✅ 참고 사항
 feature 브랜치는 원격 저장소에 꼭 올릴 필요 없음
 
+
+
+
+# Git 협업 브랜치 전략 (with worker 브랜치)
+
+이 문서는 협업 중 `main`과 개인 작업 브랜치(`worker`)를 활용한 Git 워크플로우에 대해 설명합니다.
+
+## ✅ 브랜치 구조
+
+- `main`: 모든 팀원이 공유하는 안정된 코드 베이스
+- `worker`: 개인 작업용 브랜치 (ex. `minwoo`, `worker` 등)
+
+---
+
+## 📌 기본 작업 흐름
+
+### 1. `main` 브랜치 최신화
+
+```bash
+git checkout main
+git pull origin main
+```
+
+2. 작업용 브랜치(worker)로 이동 후 최신화
+```bash
+git checkout worker
+git merge origin/main
+```
+main의 최신 내용을 작업 브랜치에 반영합니다.
+또는 git rebase origin/main도 가능하지만, 커밋 히스토리가 깔끔해지는 대신 충돌 시 복잡할 수 있습니다.
+
+3. 작업 진행
+작업 코드를 작성하고 커밋합니다.
+```bash
+git add .
+git commit -m "작업 내용"
+```
+4. 중간에 main에 변경이 생겼는지 확인
+```bash
+git fetch origin main
+git merge origin/main
+```
+다른 사람이 main에 푸시한 경우 충돌이 발생할 수 있으며, 충돌 시 해결 후 커밋합니다.
+
+5. 작업 완료 후 worker 브랜치 푸시
+```bash
+git push origin worker
+```
+자신이 작업한 코드를 원격 worker 브랜치에 푸시합니다.
+
+6. main으로 돌아와 최신화
+```bash
+git checkout main
+git pull origin main
+```
+
+7. main에 worker 브랜치 병합
+```bash
+git merge worker --no-ff
+--no-ff를 통해 병합 커밋을 남깁니다. 나중에 누가 어떤 브랜치를 병합했는지 확인하기 쉽습니다.
+```
+
+8. 최종적으로 main 푸시
+```bash
+git push origin main
+```
+
+## 🔍 정리
+
+| 상황              | 명령어                                                                 | 설명                                      |
+|-------------------|------------------------------------------------------------------------|-------------------------------------------|
+| 작업 전           | `git checkout main`<br>`git pull origin main`                          | `main` 브랜치 최신화                      |
+| 브랜치 이동       | `git checkout worker`                                                  | 작업 브랜치로 이동                        |
+| 최신 내용 반영    | `git merge origin/main`<br>or<br>`git rebase origin/main`              | `main`에서 수정된 내용 반영               |
+| 작업 중간 최신화  | `git fetch origin main`<br>+<br>`git merge origin/main`<br>or<br>`rebase` | 작업 중 `main` 변경 내용 동기화           |
+| 작업 완료         | `git push origin worker`                                               | 자신의 작업 브랜치에 푸시                 |
+| 병합              | `git merge worker --no-ff`                                             | `main`에 병합 (병합 커밋 남기기)          |
+| 최종 푸시         | `git push origin main`                                                 | `main`에 최종 변경사항 푸시               |
